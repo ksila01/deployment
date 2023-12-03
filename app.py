@@ -1,4 +1,4 @@
-# For potato leaf disease prediction
+from google.cloud import storage
 import streamlit as st
 from PIL import Image
 import numpy as np
@@ -31,10 +31,10 @@ def main() :
 
 def predict_class(image) :
     with st.spinner('Loading Model...'):
-        classifier_model = keras.models.load_model(r'final_model.h5', compile = False)
+        classifier_model = keras.models.load_model(r'potatoes.h5', compile = False)
 
     shape = ((256,256,3))
-    model = keras.Sequential([hub.KerasLayer(classifier_model, input_shape = shape)])     # ye bhi kaam kar raha he
+    model = keras.Sequential([hub.KerasLayer(classifier_model, input_shape = shape)])    
     test_image = image.resize((256, 256))
     test_image = keras.preprocessing.image.img_to_array(test_image)
     test_image /= 255.0
@@ -71,7 +71,7 @@ a:hover,  a:active {
 </style>
 
 <div class="footer">
-<p align="center"> <a href="https://www.linkedin.com/in/ronylpatil/">Developed with ❤ by ronil</a></p>
+<p align="center"> Developed kelvin sila</a></p>
 </div>
         """
 
