@@ -1,1 +1,1 @@
-web: waitress-serve --port=$PORT app:app
+web: sh setup.sh && streamlit run webapp.py

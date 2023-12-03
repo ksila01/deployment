@@ -1,49 +1,84 @@
-# Flask is the overall web framework
-from flask import Flask, request
-# joblib is used to unpickle the model
-import joblib
-# json is used to prepare the result
-import json
+# For potato leaf disease prediction
+import streamlit as st
+from PIL import Image
+import numpy as np
+import tensorflow.keras as keras
+import matplotlib.pyplot as plt
+import tensorflow_hub as hub
 
-# create new flask app here
-app = Flask(__name__)
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html = True)
 
-# helper function here
+st.title('Potato Leaf Disease Prediction')
 
-def iris_prediction(sepal_length, sepal_width, petal_length, petal_width):
-    """
-    Given sepal length, sepal width, petal length, and petal width,
-    predict the class of iris
-    """
+def main() :
+    file_uploaded = st.file_uploader('Choose an image...', type = 'jpg')
+    if file_uploaded is not None :
+        image = Image.open(file_uploaded)
+        st.write("Uploaded Image.")
+        figure = plt.figure()
+        plt.imshow(image)
+        plt.axis('off')
+        st.pyplot(figure)
+        result, confidence = predict_class(image)
+        st.write('Prediction : {}'.format(result))
+        st.write('Confidence : {}%'.format(confidence))
 
-    # Load the model from the file
-    with open("model.pkl", "rb") as f:
-        model = joblib.load(f)
+def predict_class(image) :
+    with st.spinner('Loading Model...'):
+        classifier_model = keras.models.load_model(r'final_model.h5', compile = False)
 
-    # Construct the 2D matrix of values that .predict is expecting
-    X = [[sepal_length, sepal_width, petal_length, petal_width]]
+    shape = ((256,256,3))
+    model = keras.Sequential([hub.KerasLayer(classifier_model, input_shape = shape)])     # ye bhi kaam kar raha he
+    test_image = image.resize((256, 256))
+    test_image = keras.preprocessing.image.img_to_array(test_image)
+    test_image /= 255.0
+    test_image = np.expand_dims(test_image, axis = 0)
+    class_name = ['Potato__Early_blight', 'Potato__Late_blight', 'Potato__healthy']
 
-    # Get a list of predictions and select only 1st
-    predictions = model.predict(X)
-    prediction = int(predictions[0])
+    prediction = model.predict(test_image)
+    confidence = round(100 * (np.max(prediction[0])), 2)
+    final_pred = class_name[np.argmax(prediction)]
+    return final_pred, confidence
 
-    return {"predicted_class": prediction}
+footer = """<style>
+a:link , a:visited{
+    color: white;
+    background-color: transparent;
+    text-decoration: None;
+}
 
-# defining routes here
+a:hover,  a:active {
+    color: red;
+    background-color: transparent;
+    text-decoration: None;
+}
 
-@app.route('/', methods=['GET'])
-def index():
-    return 'Hello, world!'
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: transparent;
+    color: black;
+    text-align: center;
+}
+</style>
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    # Get the request data from the user in JSON format
-    request_json = request.get_json()
+<div class="footer">
+<p align="center"> <a href="https://www.linkedin.com/in/ronylpatil/">Developed with ❤ by ronil</a></p>
+</div>
+        """
 
-    # We are expecting the request to look like this:
-    # {"sepal_length": <x1>, "sepal_width": <x2>, "petal_length": <x3>, "petal_width": <x4>}
-    # Send it to our prediction function using ** to unpack the arguments
-    result = iris_prediction(**request_json)
+st.markdown(footer, unsafe_allow_html = True)
 
-    # Return the result as a string with JSON format
-    return json.dumps(result)
+if __name__ == '__main__' :
+    main()
+
+
+
